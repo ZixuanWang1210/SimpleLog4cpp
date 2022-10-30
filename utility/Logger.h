@@ -7,6 +7,20 @@ namespace myLogger
 {
     namespace utility
     {
+#define debug(format, ...) \
+    Logger::instance()->Logger::log(Logger::DEBUG, __FILE__, __LINE__, format, ##__VA_ARGS__);
+
+#define info(format, ...) \
+    Logger::instance()->Logger::log(Logger::INFO, __FILE__, __LINE__, format, ##__VA_ARGS__);
+
+#define warn(format, ...) \
+    Logger::instance()->Logger::log(Logger::WARNING, __FILE__, __LINE__, format, ##__VA_ARGS__);
+
+#define error(format, ...) \
+    Logger::instance()->Logger::log(Logger::ERROR, __FILE__, __LINE__, format, ##__VA_ARGS__);
+
+#define fatal(format, ...) \
+    Logger::instance()->Logger::log(Logger::FATAL, __FILE__, __LINE__, format, ##__VA_ARGS__);
         class Logger
         {
         public:
