@@ -5,16 +5,16 @@
 #include <stdarg.h>
 using namespace myLogger::utility;
 
-Logger::Logger() {}
-Logger::~Logger() {}
+Logger::Logger() : now_length(0), max_length(0), m_level(DEBUG) {}
+Logger::~Logger() { close(); }
 
 const char *Logger::s_level[LEVEL_COUNT] = {"[DEBUG]", "[INFO]", "[WARNING]", "[ERROR]", "[FATAL]"};
 
-Logger *Logger::m_instance = NULL;
+Logger *Logger::m_instance = nullptr;
 
 Logger *Logger::instance()
 {
-    if (m_instance == NULL)
+    if (m_instance == nullptr)
     {
         m_instance = new Logger();
     }
@@ -24,10 +24,13 @@ Logger *Logger::instance()
 void Logger::open(const std::string &filename)
 {
     m_fout.open(filename, std::ios::app);
+    m_filename = filename;
     if (m_fout.fail())
     {
         throw std::logic_error("open file failed" + filename);
     }
+    m_fout.seekp(0, std::ios::end);
+    now_length = m_fout.tellp();
 }
 
 void Logger::close()
@@ -37,12 +40,14 @@ void Logger::close()
 
 void Logger::log(Level level, const char *file, int line, char *format, ...)
 {
+    if (m_level > level)
+        return;
     if (m_fout.fail())
     {
         throw std::logic_error("open file failed " + m_filename);
     }
 
-    time_t ticks = time(NULL);
+    time_t ticks = time(nullptr);
     struct tm *curTime = localtime(&ticks);
     char timestamp[32];
     memset(timestamp, 0, sizeof timestamp);
@@ -58,6 +63,7 @@ void Logger::log(Level level, const char *file, int line, char *format, ...)
         buffer[siz] = 0;
         //      std::cout<<buffer<<std::endl;
         m_fout << buffer;
+        now_length += siz;
         delete buffer;
     }
     //    可变参数格式化
@@ -71,7 +77,30 @@ void Logger::log(Level level, const char *file, int line, char *format, ...)
         vsnprintf(content, siz + 1, format, arg_ptr);
         va_end(arg_ptr);
         m_fout << content;
+        now_length += siz;
+        delete content;
     }
     m_fout << '\n';
     m_fout.flush();
+    if (now_length >= max_length && max_length > 0)
+    {
+        rotate();
+    }
+}
+
+void Logger::rotate()
+{
+    close();
+    time_t ticks = time(nullptr);
+    struct tm *ptm = localtime(&ticks);
+    char timestamp[32];
+    memset(timestamp, 0, sizeof(timestamp));
+    strftime(timestamp, sizeof(timestamp), ".%Y-%m-%d_%H-%M-%S", ptm);
+    std::string filename = m_filename + timestamp;
+    std::cout << filename << std::endl;
+    if (rename(m_filename.c_str(), filename.c_str()) != 0)
+    {
+        throw std::logic_error("rename log file failed: " + std::string(strerror(errno)));
+    }
+    open(m_filename);
 }

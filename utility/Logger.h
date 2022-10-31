@@ -21,6 +21,7 @@ namespace myLogger
 
 #define fatal(format, ...) \
     Logger::instance()->Logger::log(Logger::FATAL, __FILE__, __LINE__, format, ##__VA_ARGS__);
+
         class Logger
         {
         public:
@@ -38,16 +39,28 @@ namespace myLogger
 
             void open(const std::string &filename);
             void close();
+            void setLevel(Level level)
+            {
+                m_level = level;
+            }
+            void setMax(int length)
+            {
+                max_length = length;
+            }
 
         private:
             Logger();
             ~Logger();
-            static Logger *m_instance;
+            void rotate();
 
         private:
+            static Logger *m_instance;
             static const char *s_level[LEVEL_COUNT];
             std::string m_filename;
             std::ofstream m_fout;
+            int max_length;
+            int now_length;
+            Level m_level;
         };
     }
 }
