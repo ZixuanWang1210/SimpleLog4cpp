@@ -22,7 +22,7 @@ enum Level
     LEVEL_COUNT
 };
 ```
-
+**Demo**
 ```c++
 #include "Logger.h"
 using namespace myLogger::utility;
